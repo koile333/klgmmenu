@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KLGM小菜馆 · 在线点单</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="#" class="logo">🍳 KLGM小菜馆</a>
+            <div class="nav-right">
+                <button class="cart-btn" id="cartToggle" onclick="toggleCart()">
+                    🛒 购物车<span class="cart-badge" id="cartBadge">0</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 头部 -->
+    <header class="hero">
+        <div class="hero-content">
+            <h1 class="hero-title">KLGM小菜馆</h1>
+            <p class="hero-subtitle">地道家常味，每一口都是幸福</p>
+            <p class="hero-desc">精选新鲜食材 · 匠心烹饪 · 在线点单 · 美味直达</p>
+            <a href="#menu" class="btn btn-primary">开始点菜</a>
+        </div>
+    </header>
+
+    <!-- 菜单区域 -->
+    <section class="section" id="menu">
+        <div class="section-container">
+            <h2 class="section-title">📋 美味菜单</h2>
+            <p class="section-desc">点击菜品加入购物车，随时下单</p>
+
+            <!-- 分类导航 -->
+            <div class="category-nav">
+                <button class="cat-btn active" onclick="filterMenu('all', this)">全部</button>
+                <button class="cat-btn" onclick="filterMenu('recommend', this)">🔥 推荐</button>
+                <button class="cat-btn" onclick="filterMenu('cold', this)">🥗 凉菜</button>
+                <button class="cat-btn" onclick="filterMenu('hot', this)">🍳 热菜</button>
+                <button class="cat-btn" onclick="filterMenu('soup', this)">🍲 汤品</button>
+                <button class="cat-btn" onclick="filterMenu('staple', this)">🍚 主食</button>
+                <button class="cat-btn" onclick="filterMenu('drink', this)">🥤 饮品</button>
+                <button class="cat-btn" onclick="filterMenu('dessert', this)">🍰 甜品</button>
+            </div>
+
+            <!-- 添加菜品按钮 -->
+            <div class="add-menu-bar">
+                <button type="button" class="btn btn-outline" onclick="openAddModal()">➕ 添加菜品</button>
+            </div>
+
+            <!-- 菜品网格 -->
+            <div class="menu-grid" id="menuGrid">
+                <!-- JS 动态生成 -->
+            </div>
+        </div>
+    </section>
+
+    <!-- 订单记录区域 -->
+    <section class="section order-section" id="orders">
+        <div class="section-container">
+            <h2 class="section-title">📝 下单记录</h2>
+            <p class="section-desc">历史订单，一目了然</p>
+
+            <div class="order-stats order-stats-clickable" id="orderStats" onclick="toggleOrderList()" title="点击查看全部订单">
+                <div class="order-stats-row">
+                    <div class="order-stat-card">
+                        <div class="order-stat-num" id="statTotal">0</div>
+                        <div class="order-stat-label">总订单</div>
+                    </div>
+                    <div class="order-stat-card">
+                        <div class="order-stat-num" id="statAmount">¥0</div>
+                        <div class="order-stat-label">累计金额</div>
+                    </div>
+                </div>
+                <span class="order-toggle-hint" id="orderToggleHint">点击展开 ▼</span>
+            </div>
+
+            <div class="order-expand-area" id="orderExpandArea">
+                <div class="order-controls">
+                    <button type="button" class="btn btn-outline btn-small" onclick="clearOrderHistory()">🗑️ 清空记录</button>
+                </div>
+
+                <div class="order-list" id="orderList">
+                    <div class="order-empty">
+                        <div class="order-empty-icon">📝</div>
+                        <p>暂无下单记录</p>
+                        <span>快去点几道美食吧~</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 页脚 -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-info">
+                <h3>🍳 KLGM小菜馆</h3>
+                <p>📍 上海市浦东新区潍坊新村</p>
+                <p>📞 4008008820</p>
+                <p>🕐 营业时间：10:00 - 22:00</p>
+                <button type="button" class="admin-entry" onclick="openAdminLogin()" title="后台管理">⚙️ 进入管理后台</button>
+            </div>
+        </div>
+        <p class="footer-copy">&copy; 2026 KLGM小菜馆. All rights reserved.</p>
+    </footer>
+
+    <!-- 管理后台登录弹窗 -->
+    <div class="modal" id="adminLoginModal">
+        <div class="modal-content admin-login-content">
+            <h2>🔐 管理后台</h2>
+            <p class="admin-login-desc">请输入管理密码</p>
+            <form class="admin-login-form" onsubmit="adminLogin(event)">
+                <input type="password" id="adminPassword" placeholder="请输入密码" autocomplete="off" required>
+                <div class="admin-login-actions">
+                    <button type="button" class="btn btn-cancel" onclick="closeAdminLogin()">取消</button>
+                    <button type="submit" class="btn btn-primary">登录</button>
+                </div>
+            </form>
+            <p class="admin-login-error" id="adminLoginError"></p>
+        </div>
+    </div>
+
+    <!-- 管理后台面板 -->
+    <div class="modal" id="adminPanelModal">
+        <div class="modal-content admin-panel-content">
+            <div class="admin-panel-header">
+                <h2>⚙️ 菜品管理后台</h2>
+                <button class="cart-close" onclick="closeAdminPanel()">✕</button>
+            </div>
+            <div class="admin-toolbar">
+                <button class="btn btn-primary btn-small" onclick="openAdminEditModal()">➕ 新增菜品</button>
+                <button class="btn btn-outline btn-small" onclick="resetMenuData()">🔄 恢复默认</button>
+                <span class="admin-dish-count" id="adminDishCount"></span>
+            </div>
+            <div class="admin-table-wrap">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>图标</th>
+                            <th>名称</th>
+                            <th>分类</th>
+                            <th class="col-price">价格</th>
+                            <th class="col-desc">描述</th>
+                            <th class="col-action">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminTableBody"></tbody>
+                </table>
+                <div class="admin-empty" id="adminEmpty">暂无菜品数据</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 管理后台-编辑菜品弹窗 -->
+    <div class="modal" id="adminEditModal">
+        <div class="modal-content add-modal-content">
+            <h2 id="adminEditTitle">编辑菜品</h2>
+            <form class="add-form" id="adminEditForm" onsubmit="submitAdminEdit(event)">
+                <input type="hidden" id="admin-edit-id">
+                <div class="form-group">
+                    <label>菜品名称 *</label>
+                    <input type="text" id="admin-edit-name" placeholder="如：红烧排骨" required>
+                </div>
+                <div class="form-group">
+                    <label>菜品分类 *</label>
+                    <select id="admin-edit-category" required>
+                        <option value="">-- 请选择 --</option>
+                        <option value="recommend">🔥 推荐</option>
+                        <option value="cold">🥗 凉菜</option>
+                        <option value="hot">🍳 热菜</option>
+                        <option value="soup">🍲 汤品</option>
+                        <option value="staple">🍚 主食</option>
+                        <option value="drink">🥤 饮品</option>
+                        <option value="dessert">🍰 甜品</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>价格 (元) *</label>
+                    <input type="number" id="admin-edit-price" placeholder="如：38" min="1" max="999" required>
+                </div>
+                <div class="form-group">
+                    <label>描述</label>
+                    <input type="text" id="admin-edit-desc" placeholder="如：肉质鲜嫩，酱香浓郁">
+                </div>
+                <div class="form-group">
+                    <label>图标 (Emoji)</label>
+                    <div class="emoji-picker" id="adminEmojiPicker"></div>
+                    <input type="text" id="admin-edit-icon" value="🍽️" maxlength="2" placeholder="选择一个emoji">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-cancel" onclick="closeAdminEditModal()">取消</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 购物车侧栏遮罩 -->
+    <div class="overlay" id="overlay" onclick="toggleCart()"></div>
+
+    <!-- 购物车侧栏 -->
+    <aside class="cart-sidebar" id="cartSidebar">
+        <div class="cart-header">
+            <h3>🛒 购物车</h3>
+            <button class="cart-close" onclick="toggleCart()">✕</button>
+        </div>
+
+        <div class="cart-items" id="cartItems">
+            <div class="cart-empty">
+                <div class="cart-empty-icon">🛒</div>
+                <p>购物车是空的</p>
+                <span>快去挑选美食吧~</span>
+            </div>
+        </div>
+
+        <div class="cart-footer">
+            <div class="cart-total">
+                <span>合计</span>
+                <span class="cart-total-price" id="cartTotal">¥0.00</span>
+            </div>
+            <button class="btn btn-primary btn-order" id="orderBtn" onclick="submitOrder()">
+                立即下单
+            </button>
+        </div>
+    </aside>
+
+    <!-- 下单成功弹窗 -->
+    <div class="modal" id="successModal">
+        <div class="modal-content">
+            <div class="modal-icon">🎉</div>
+            <h2>下单成功！</h2>
+            <p>预计 30-45 分钟送达</p>
+            <p class="modal-order-id" id="modalOrderId"></p>
+            <button class="btn btn-primary" onclick="closeModal()">好的</button>
+        </div>
+    </div>
+
+    <!-- 添加菜品弹窗 -->
+    <div class="modal" id="addModal">
+        <div class="modal-content add-modal-content">
+            <h2>➕ 添加新菜品</h2>
+            <form class="add-form" id="addForm" onsubmit="submitAddDish(event)">
+                <div class="form-group">
+                    <label>菜品名称 *</label>
+                    <input type="text" id="add-name" placeholder="如：红烧排骨" required>
+                </div>
+                <div class="form-group">
+                    <label>菜品分类 *</label>
+                    <select id="add-category" required>
+                        <option value="">-- 请选择 --</option>
+                        <option value="recommend">🔥 推荐</option>
+                        <option value="cold">🥗 凉菜</option>
+                        <option value="hot">🍳 热菜</option>
+                        <option value="soup">🍲 汤品</option>
+                        <option value="staple">🍚 主食</option>
+                        <option value="drink">🥤 饮品</option>
+                        <option value="dessert">🍰 甜品</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>价格 (元) *</label>
+                    <input type="number" id="add-price" placeholder="如：38" min="1" max="999" required>
+                </div>
+                <div class="form-group">
+                    <label>描述</label>
+                    <input type="text" id="add-desc" placeholder="如：肉质鲜嫩，酱香浓郁">
+                </div>
+                <div class="form-group">
+                    <label>图标 (Emoji)</label>
+                    <div class="emoji-picker" id="emojiPicker"></div>
+                    <input type="text" id="add-icon" value="🍽️" maxlength="2" placeholder="选择一个emoji">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-cancel" onclick="closeAddModal()">取消</button>
+                    <button type="submit" class="btn btn-primary">确认添加</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
