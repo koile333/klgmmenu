@@ -69,11 +69,50 @@ function saveMenuData(data) {
 
 let menuData = loadMenuData();
 
+// ===== 用户账户系统 =====
+let currentUser = sessionStorage.getItem('currentUser') || null;
+
+function getUsersData() {
+    try {
+        const data = localStorage.getItem('usersData');
+        return data ? JSON.parse(data) : {};
+    } catch (e) { return {}; }
+}
+
+function saveUsersData(data) {
+    localStorage.setItem('usersData', JSON.stringify(data));
+}
+
+function simpleHash(str) {
+    // 简单哈希（仅用于本地演示，生产环境需用 bcrypt 等）
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash |= 0;
+    }
+    return 'h_' + Math.abs(hash).toString(36);
+}
+
+function getCurrentUserOrders() {
+    if (!currentUser) return [];
+    const users = getUsersData();
+    return users[currentUser] ? (users[currentUser].orders || []) : [];
+}
+
+function saveCurrentUserOrders(orders) {
+    if (!currentUser) return;
+    const users = getUsersData();
+    if (!users[currentUser]) users[currentUser] = { password: '', orders: [] };
+    users[currentUser].orders = orders;
+    saveUsersData(users);
+}
+
 // ===== 购物车 =====
 let cart = [];
 
 // ===== 订单记录 =====
-let orderHistory = [];
+let orderHistory = getCurrentUserOrders();
 
 // ===== 渲染菜单 =====
 function renderMenu(category = 'all') {
@@ -212,6 +251,11 @@ function toggleCart() {
 // ===== 下单 =====
 function submitOrder() {
     if (cart.length === 0) return;
+    if (!currentUser) {
+        showToast('请先登录再下单');
+        closeModalSuccess();
+        return;
+    }
 
     const orderId = 'WD' + Date.now().toString(36).toUpperCase();
     const totalPrice = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
@@ -227,6 +271,7 @@ function submitOrder() {
         totalQty
     };
     orderHistory.unshift(orderRecord);
+    saveCurrentUserOrders(orderHistory);
     renderOrderHistory();
 
     document.getElementById('modalOrderId').textContent =
@@ -237,6 +282,10 @@ function submitOrder() {
 }
 
 function closeModal() {
+    closeModalSuccess();
+}
+
+function closeModalSuccess() {
     document.getElementById('successModal').classList.remove('show');
 
     // 清空购物车
@@ -603,10 +652,167 @@ function clearOrderHistory() {
     }
     if (confirm(`确定要清空全部 ${orderHistory.length} 条下单记录吗？`)) {
         orderHistory = [];
+        saveCurrentUserOrders(orderHistory);
         renderOrderHistory();
         showToast('下单记录已清空');
     }
 }
+
+// ===== 用户登录/注册 =====
+let isLoginMode = true;
+
+function openLoginModal() {
+    isLoginMode = true;
+    updateLoginUI();
+    document.getElementById('userLoginModal').classList.add('show');
+    document.getElementById('login-username').value = '';
+    document.getElementById('login-password').value = '';
+    document.getElementById('loginError').textContent = '';
+    document.getElementById('userDropdown').classList.remove('show');
+    setTimeout(() => document.getElementById('login-username').focus(), 100);
+}
+
+function closeLoginModal() {
+    document.getElementById('userLoginModal').classList.remove('show');
+}
+
+function toggleLoginRegister() {
+    isLoginMode = !isLoginMode;
+    updateLoginUI();
+    document.getElementById('login-username').value = '';
+    document.getElementById('login-password').value = '';
+    document.getElementById('loginError').textContent = '';
+    document.getElementById('login-username').focus();
+}
+
+function updateLoginUI() {
+    const title = document.getElementById('loginModalTitle');
+    const desc = document.getElementById('loginModalDesc');
+    const submitBtn = document.getElementById('loginSubmitBtn');
+    const toggleText = document.getElementById('loginToggleText');
+    const toggleLink = document.getElementById('loginToggleLink');
+
+    if (isLoginMode) {
+        title.textContent = '🔑 登录';
+        desc.textContent = '登录后查看你的下单记录';
+        submitBtn.textContent = '登录';
+        toggleText.textContent = '还没有账号？';
+        toggleLink.textContent = '立即注册';
+    } else {
+        title.textContent = '📝 注册';
+        desc.textContent = '创建账号，记录你的每一次点单';
+        submitBtn.textContent = '注册';
+        toggleText.textContent = '已有账号？';
+        toggleLink.textContent = '返回登录';
+    }
+}
+
+function handleLogin(e) {
+    e.preventDefault();
+
+    const username = document.getElementById('login-username').value.trim();
+    const password = document.getElementById('login-password').value;
+    const errorEl = document.getElementById('loginError');
+
+    if (!username || !password) {
+        errorEl.textContent = '请填写用户名和密码';
+        return;
+    }
+
+    if (username.length < 2 || username.length > 20) {
+        errorEl.textContent = '用户名需要 2-20 个字符';
+        return;
+    }
+
+    if (password.length < 4) {
+        errorEl.textContent = '密码至少需要 4 位';
+        return;
+    }
+
+    const users = getUsersData();
+    const hashedPwd = simpleHash(password);
+
+    if (isLoginMode) {
+        // 登录
+        if (!users[username]) {
+            errorEl.textContent = '用户名不存在，请先注册';
+            return;
+        }
+        if (users[username].password !== hashedPwd) {
+            errorEl.textContent = '密码错误，请重试';
+            return;
+        }
+        doLogin(username);
+    } else {
+        // 注册
+        if (users[username]) {
+            errorEl.textContent = '用户名已存在，请更换';
+            return;
+        }
+        users[username] = { password: hashedPwd, orders: [] };
+        saveUsersData(users);
+        doLogin(username);
+    }
+}
+
+function doLogin(username) {
+    currentUser = username;
+    sessionStorage.setItem('currentUser', username);
+    orderHistory = getCurrentUserOrders();
+    closeLoginModal();
+    updateUserUI();
+    renderOrderHistory();
+    showToast(`欢迎回来，${username}！`);
+}
+
+function userLogout() {
+    currentUser = null;
+    sessionStorage.removeItem('currentUser');
+    orderHistory = [];
+    cart = [];
+    updateCart();
+    updateUserUI();
+    renderOrderHistory();
+    document.getElementById('userDropdown').classList.remove('show');
+    showToast('已退出登录');
+}
+
+function toggleUserMenu() {
+    document.getElementById('userDropdown').classList.toggle('show');
+}
+
+function updateUserUI() {
+    const userBtn = document.getElementById('userBtn');
+    const userBtnText = document.getElementById('userBtnText');
+    const logoutBtn = document.getElementById('userLogoutBtn');
+    const dropdownName = document.getElementById('userDropdownName');
+    const orderDesc = document.getElementById('orderSectionDesc');
+
+    if (currentUser) {
+        userBtn.classList.add('logged-in');
+        userBtnText.textContent = currentUser;
+        logoutBtn.style.display = 'block';
+        dropdownName.textContent = currentUser;
+        orderDesc.textContent = `${currentUser} 的历史订单`;
+    } else {
+        userBtn.classList.remove('logged-in');
+        userBtnText.textContent = '登录';
+        logoutBtn.style.display = 'none';
+        dropdownName.textContent = '未登录';
+        orderDesc.textContent = '登录后查看历史订单';
+    }
+}
+
+// 点击外部关闭用户下拉菜单
+document.addEventListener('click', function(e) {
+    const dropdown = document.getElementById('userDropdown');
+    const userBtn = document.getElementById('userBtn');
+    if (!userBtn.contains(e.target) && !dropdown.contains(e.target)) {
+        dropdown.classList.remove('show');
+    }
+    if (e.target.id === 'userLoginModal') closeLoginModal();
+    if (e.target.id === 'successModal') closeModalSuccess();
+});
 
 // ===== 键盘快捷键 =====
 document.addEventListener('keydown', function(e) {
@@ -623,4 +829,5 @@ document.addEventListener('keydown', function(e) {
 // ===== 初始化 =====
 renderMenu();
 updateCart();
+updateUserUI();
 renderOrderHistory();

@@ -12,6 +12,17 @@
         <div class="nav-container">
             <a href="#" class="logo">🍳 KLGM小菜馆</a>
             <div class="nav-right">
+                <button class="user-btn" id="userBtn" onclick="toggleUserMenu()">
+                    👤 <span id="userBtnText">登录</span>
+                </button>
+                <div class="user-dropdown" id="userDropdown">
+                    <div class="user-dropdown-info" id="userDropdownInfo">
+                        <span class="user-dropdown-icon">👤</span>
+                        <span id="userDropdownName">未登录</span>
+                    </div>
+                    <button onclick="openLoginModal()">🔑 登录 / 注册</button>
+                    <button id="userLogoutBtn" onclick="userLogout()" style="display:none;">🚪 退出登录</button>
+                </div>
                 <button class="cart-btn" id="cartToggle" onclick="toggleCart()">
                     🛒 购物车<span class="cart-badge" id="cartBadge">0</span>
                 </button>
@@ -63,7 +74,7 @@
     <section class="section order-section" id="orders">
         <div class="section-container">
             <h2 class="section-title">📝 下单记录</h2>
-            <p class="section-desc">历史订单，一目了然</p>
+            <p class="section-desc" id="orderSectionDesc">登录后查看历史订单</p>
 
             <div class="order-stats order-stats-clickable" id="orderStats" onclick="toggleOrderList()" title="点击查看全部订单">
                 <div class="order-stats-row">
@@ -80,10 +91,6 @@
             </div>
 
             <div class="order-expand-area" id="orderExpandArea">
-                <div class="order-controls">
-                    <button type="button" class="btn btn-outline btn-small" onclick="clearOrderHistory()">🗑️ 清空记录</button>
-                </div>
-
                 <div class="order-list" id="orderList">
                     <div class="order-empty">
                         <div class="order-empty-icon">📝</div>
@@ -108,6 +115,33 @@
         </div>
         <p class="footer-copy">&copy; 2026 KLGM小菜馆. All rights reserved.</p>
     </footer>
+
+    <!-- 用户登录/注册弹窗 -->
+    <div class="modal" id="userLoginModal">
+        <div class="modal-content login-modal-content">
+            <h2 id="loginModalTitle">🔑 登录</h2>
+            <p class="login-modal-desc" id="loginModalDesc">登录后查看你的下单记录</p>
+            <form class="login-form" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label>用户名</label>
+                    <input type="text" id="login-username" placeholder="请输入用户名" required autocomplete="username">
+                </div>
+                <div class="form-group">
+                    <label>密码</label>
+                    <input type="password" id="login-password" placeholder="请输入密码" required autocomplete="current-password">
+                </div>
+                <div class="login-form-actions">
+                    <button type="button" class="btn btn-cancel" onclick="closeLoginModal()">取消</button>
+                    <button type="submit" class="btn btn-primary" id="loginSubmitBtn">登录</button>
+                </div>
+            </form>
+            <p class="login-error" id="loginError"></p>
+            <p class="login-toggle-text">
+                <span id="loginToggleText">还没有账号？</span>
+                <a href="javascript:void(0)" id="loginToggleLink" onclick="toggleLoginRegister()">立即注册</a>
+            </p>
+        </div>
+    </div>
 
     <!-- 管理后台登录弹窗 -->
     <div class="modal" id="adminLoginModal">
